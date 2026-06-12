@@ -1,0 +1,76 @@
+`timescale 1ns/1ps
+
+module async_fifo_tb;
+
+parameter DSIZE = 8;
+parameter ASIZE = 4;
+
+reg wclk;
+reg rclk;
+reg wrst_n;
+reg rrst_n;
+reg winc;
+reg rinc;
+reg [DSIZE-1:0] wdata;
+
+wire [DSIZE-1:0] rdata;
+wire wfull;
+wire rempty;
+
+async_fifo #(DSIZE, ASIZE) DUT
+(
+    .wclk(wclk),
+    .wrst_n(wrst_n),
+    .winc(winc),
+    .rclk(rclk),
+    .rrst_n(rrst_n),
+    .rinc(rinc),
+    .wdata(wdata),
+    .rdata(rdata),
+    .wfull(wfull),
+    .rempty(rempty)
+);
+
+always #5 wclk = ~wclk;
+always #8 rclk = ~rclk;
+
+integer i;
+
+initial
+begin
+    wclk   = 0;
+    rclk   = 0;
+    wrst_n = 0;
+    rrst_n = 0;
+    winc   = 0;
+    rinc   = 0;
+    wdata  = 0;
+
+    #20;
+    wrst_n = 1;
+    rrst_n = 1;
+
+    repeat(4) @(posedge wclk);
+
+    winc = 1;
+    for(i=1; i<=10; i=i+1)
+    begin
+        @(negedge wclk);
+        wdata = i * 10;
+    end
+    @(negedge wclk);
+    winc = 0;
+
+    #80;
+
+    rinc = 1;
+    for(i=1; i<=10; i=i+1)
+        @(posedge rclk);
+
+    rinc = 0;
+
+    #100;
+    $finish;
+end
+
+endmodule
